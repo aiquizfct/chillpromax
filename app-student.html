@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Góc học tập - Chillpromax</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Libraries -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
+    <script>
+        tailwind.config = { 
+            darkMode: 'class', 
+            theme: { 
+                extend: { 
+                    fontFamily: { sans: ['"Be Vietnam Pro"', 'sans-serif'] }, 
+                    colors: { brand: { 50: '#f5f3ff', 100: '#ede9fe', 200: '#ddd6fe', 300: '#c4b5fd', 400: '#a78bfa', 500: '#8b5cf6', 600: '#7c3aed', 700: '#6d28d9' } } 
+                } 
+            } 
+        }
+        if (localStorage.getItem('chill_theme') === 'dark') document.documentElement.classList.add('dark');
+    </script>
+    <style>
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .dark ::-webkit-scrollbar-thumb { background: #475569; }
+        
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-up { animation: fadeUp 0.4s ease-out forwards; }
+        
+        /* Content Styling */
+        .ql-editor { padding: 0; font-family: 'Be Vietnam Pro', sans-serif; font-size: 1.05rem; line-height: 1.8; color: #334155; }
+        .ql-editor img { max-width: 100%; border-radius: 1rem; margin: 1.5rem auto; display: block; }
+        .dark .ql-editor { color: #e2e8f0; }
+        .dark .ql-editor blockquote { background: #1e293b; color: #94a3b8; border-left-color: #8b5cf6; }
+        
+        .tab-active { background-color: #e0e7ff; color: #4f46e5; border-bottom: 2px solid #4f46e5; }
+        .dark .tab-active { background-color: #1e1b4b; color: #a5b4fc; border-bottom: 2px solid #6366f1; }
+        
+        .quiz-option:hover { background-color: rgba(139, 92, 246, 0.05); }
+        .quiz-selected { border-color: #8b5cf6; background-color: rgba(139, 92, 246, 0.1) !important; }
+        .quiz-correct { border-color: #10b981 !important; background-color: rgba(16, 185, 129, 0.1) !important; }
+        .quiz-wrong { border-color: #ef4444 !important; background-color: rgba(239, 68, 68, 0.1) !important; opacity: 0.7; }
+        
+        /* Pomodoro Circle */
+        .progress-ring__circle { transition: stroke-dashoffset 0.35s; transform: rotate(-90deg); transform-origin: 50% 50%; }
+        
+        /* Heart Animation */
+        @keyframes heart-beat { 0% { transform: scale(1); } 25% { transform: scale(1.2); } 50% { transform: scale(1); } 75% { transform: scale(1.2); } 100% { transform: scale(1); } }
+        .animate-heart { animation: heart-beat 0.4s ease-in-out; }
+
+        /* Toggle Switch */
+        .toggle-checkbox:checked { right: 0; border-color: #68D391; }
+        .toggle-checkbox:checked + .toggle-label { background-color: #68D391; }
+    </style>
+</head>
+<body class="bg-[#F0F4F8] text-slate-900 dark:bg-[#0B1120] dark:text-slate-100 transition-colors duration-300 font-sans overflow-hidden selection:bg-brand-500 selection:text-white">
+
+    <!-- LOADING -->
+    <div id="app-loading" class="fixed inset-0 z-[100] bg-white dark:bg-[#0B1120] flex flex-col items-center justify-center">
+        <div class="w-12 h-12 border-4 border-brand-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p class="text-slate-500 font-bold text-sm">ĐANG TẢI...</p>
+    </div>
+
+    <div class="flex h-screen overflow-hidden">
+        
+        <!-- SIDEBAR -->
+        <aside class="hidden md:flex w-72 flex-col bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-r border-white/50 dark:border-slate-800 z-30 shadow-sm">
+            <div class="h-24 flex items-center px-8">
+                <div class="flex items-center space-x-2 text-brand-600 font-black text-2xl tracking-tight cursor-pointer" onclick="goHome()">
+                    <i data-lucide="zap" class="w-8 h-8 fill-current"></i>
+                    <span>ChillPromax</span>
+                </div>
+            </div>
+            <nav class="flex-1 py-6 px-4 space-y-2 overflow-y-auto">
+                <button onclick="switchView('navigation')" id="nav-home" class="w-full flex items-center px-5 py-4 bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-400 rounded-2xl font-bold"><i data-lucide="book-open" class="w-5 h-5 mr-4"></i>Góc học tập</button>
+                <button onclick="switchView('favorites')" id="nav-favorites" class="w-full flex items-center px-5 py-4 text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800 rounded-2xl font-bold transition group"><i data-lucide="heart" class="w-5 h-5 mr-4 group-hover:text-pink-500"></i>Yêu thích</button>
+                <button onclick="switchView('tools')" id="nav-tools" class="w-full flex items-center px-5 py-4 text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800 rounded-2xl font-bold transition"><i data-lucide="layout-grid" class="w-5 h-5 mr-4"></i>Công cụ</button>
+                <button onclick="switchView('stats')" id="nav-stats" class="w-full flex items-center px-5 py-4 text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800 rounded-2xl font-bold transition"><i data-lucide="bar-chart-2" class="w-5 h-5 mr-4"></i>Thống kê</button>
+            </nav>
+            <div class="p-6 border-t border-slate-100 dark:border-slate-800">
+                <div class="flex items-center mb-4">
+                    <div class="w-10 h-10 rounded-full bg-gradient-to-r from-pink-500 to-orange-400 flex items-center justify-center text-white font-bold" id="avatar-text">U</div>
+                    <div class="ml-3 overflow-hidden"><p class="text-sm font-bold truncate" id="sidebar-email">User</p><p class="text-xs text-slate-500">Học sinh</p></div>
+                </div>
+                <button onclick="handleLogout()" class="w-full py-2 text-xs font-bold border rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-500 transition">Đăng xuất</button>
+            </div>
+        </aside>
+
+        <!-- MAIN -->
+        <div class="flex-1 flex flex-col min-w-0 overflow-hidden relative">
+            <!-- HEADER -->
+            <header class="h-20 flex items-center justify-between px-8 sticky top-0 z-20 backdrop-blur-sm bg-white/70 dark:bg-[#0B1120]/80 border-b border-slate-200/60 dark:border-slate-800/60">
+                <div class="flex items-center md:hidden"><button class="p-2 -ml-2 mr-4 text-slate-600 rounded-xl hover:bg-slate-100"><i data-lucide="menu"></i></button></div>
+                <div id="breadcrumb-container" class="flex items-center text-sm font-bold text-slate-500">Trang chủ</div>
+                <div class="flex items-center space-x-4"><button onclick="toggleTheme()" class="w-10 h-10 rounded-full border flex items-center justify-center"><i data-lucide="moon" class="dark:hidden w-5 h-5"></i><i data-lucide="sun" class="hidden dark:block w-5 h-5 text-yellow-400"></i></button></div>
+            </header>
+
+            <!-- CONTENT -->
+            <main class="flex-1 overflow-y-auto p-4 md:p-8 scroll-smooth" id="main-scroll">
+                <div class="max-w-6xl mx-auto pb-24">
+                    
+                    <!-- VIEW 1: NAVIGATION -->
+                    <div id="navigation-view">
+                        <div class="mb-10">
+                            <h1 class="text-3xl md:text-4xl font-black text-slate-900 dark:text-white mb-2" id="page-heading">Học gì hôm nay?</h1>
+                            <p class="text-slate-500" id="page-subheading">Chọn chương trình học để bắt đầu.</p>
+                        </div>
+                        <div id="dynamic-grid" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6"></div>
+                    </div>
+
+                    <!-- VIEW 2: LESSON LIST -->
+                    <div id="lesson-list-view" class="hidden">
+                        <div class="flex justify-between items-end mb-8">
+                            <div>
+                                <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-1">Danh sách bài học</h2>
+                                <div class="inline-flex px-3 py-1 rounded-lg bg-brand-50 dark:bg-brand-900/20 text-brand-600 text-xs font-bold border border-brand-200 dark:border-brand-800" id="filter-badge">...</div>
+                            </div>
+                            <button onclick="goBack()" class="px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-sm hover:shadow-md transition flex items-center"><i data-lucide="arrow-left" class="w-4 h-4 mr-2"></i> Quay lại</button>
+                        </div>
+                        <div id="lesson-container" class="space-y-4"></div>
+                    </div>
+
+                    <!-- VIEW 3: LESSON VIEWER -->
+                    <div id="lesson-viewer-view" class="hidden h-full flex flex-col">
+                         <div class="flex justify-between items-center mb-6">
+                            <div class="flex-1 mr-4">
+                                <p class="text-xs font-extrabold text-slate-400 uppercase tracking-widest mb-1" id="viewer-subtitle">CHƯƠNG...</p>
+                                <h1 class="text-2xl font-black text-slate-900 dark:text-white line-clamp-1" id="viewer-title">Tên bài học</h1>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button onclick="toggleFavorite()" id="btn-favorite" class="w-10 h-10 bg-white dark:bg-slate-800 rounded-full flex items-center justify-center border border-slate-200 dark:border-slate-700 hover:border-pink-200 transition group"><i data-lucide="heart" class="w-5 h-5 text-slate-400 group-hover:text-pink-500 transition-colors" id="icon-heart"></i></button>
+                                <button onclick="goBack()" class="w-10 h-10 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 transition"><i data-lucide="x" class="w-5 h-5"></i></button>
+                            </div>
+                        </div>
+                        <div class="flex border-b border-slate-200 dark:border-slate-700 mb-6">
+                            <button onclick="switchLessonTab('theory')" id="tab-btn-theory" class="tab-btn tab-active px-6 py-3 font-bold text-sm flex items-center"><i data-lucide="book-open" class="w-4 h-4 mr-2"></i> Lý thuyết</button>
+                            <button onclick="switchLessonTab('quiz')" id="tab-btn-quiz" class="tab-btn px-6 py-3 font-bold text-sm flex items-center text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"><i data-lucide="brain-circuit" class="w-4 h-4 mr-2"></i> Bài tập</button>
+                        </div>
+                        <div id="tab-content-theory">
+                            <div class="bg-white dark:bg-slate-900 p-8 md:p-10 rounded-[2rem] shadow-sm border border-slate-100 dark:border-slate-800 relative overflow-hidden">
+                                <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-brand-400 via-purple-500 to-pink-500"></div>
+                                <div id="lesson-content" class="ql-editor"></div>
+                                <div class="mt-10 pt-8 border-t border-slate-100 dark:border-slate-800 text-center">
+                                    <button onclick="switchLessonTab('quiz')" class="px-8 py-3 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-bold shadow-lg transition transform active:scale-95">Đã hiểu! Làm bài tập ngay <i data-lucide="arrow-right" class="w-4 h-4 ml-2 inline"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="tab-content-quiz" class="hidden">
+                            <div class="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 max-w-3xl mx-auto">
+                                <div class="flex items-center justify-between mb-6 pb-4 border-b border-slate-50 dark:border-slate-800">
+                                    <h3 class="text-lg font-bold flex items-center"><i data-lucide="help-circle" class="w-5 h-5 mr-2 text-brand-500"></i> Trắc nghiệm</h3>
+                                    <div id="quiz-score-badge" class="hidden px-3 py-1 bg-green-100 text-green-700 rounded-lg text-xs font-bold">0/0</div>
+                                </div>
+                                <div id="quiz-container" class="space-y-8"></div>
+                                <div id="no-quiz-msg" class="hidden text-center py-12 text-slate-400">Bài này không có câu hỏi.</div>
+                                <div class="mt-8 pt-6 border-t border-slate-100 dark:border-slate-700 flex justify-end">
+                                    <button onclick="submitQuiz()" id="submit-quiz-btn" class="px-8 py-3 bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white rounded-xl font-bold shadow-lg transition transform active:scale-95 flex items-center"><span>Nộp bài</span> <i data-lucide="send" class="w-4 h-4 ml-2"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- VIEW 4: FAVORITES -->
+                    <div id="favorites-view" class="hidden">
+                        <div class="mb-8"><h2 class="text-3xl font-bold text-slate-900 dark:text-white mb-2">Bài học yêu thích 💖</h2><p class="text-slate-500">Danh sách các bài học bạn đã lưu.</p></div>
+                        <div id="favorites-container" class="space-y-4"></div>
+                    </div>
+
+                    <!-- VIEW 5: STATS -->
+                    <div id="stats-view" class="hidden">
+                        <h2 class="text-3xl font-bold mb-6 text-slate-900 dark:text-white">Thống kê học tập 📊</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                            <div class="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800"><p class="text-slate-500 text-sm font-bold uppercase tracking-wider mb-2">Bài đã làm</p><h3 class="text-4xl font-black text-brand-600" id="stat-total-quizzes">0</h3></div>
+                            <div class="bg-white dark:bg-slate-900 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800"><p class="text-slate-500 text-sm font-bold uppercase tracking-wider mb-2">Điểm trung bình</p><h3 class="text-4xl font-black text-green-500" id="stat-avg-score">0.0</h3></div>
+                        </div>
+                        <h3 class="text-xl font-bold mb-4">Lịch sử làm bài</h3>
+                        <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 overflow-hidden">
+                            <div class="overflow-x-auto"><table class="w-full text-left text-sm"><thead class="bg-slate-50 dark:bg-slate-800/50 font-bold text-slate-500 border-b border-slate-100 dark:border-slate-800"><tr><th class="px-6 py-4">Bài học</th><th class="px-6 py-4">Điểm số</th><th class="px-6 py-4">Thời gian</th></tr></thead><tbody id="stats-history-body" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody></table></div>
+                            <div id="stats-empty" class="p-8 text-center text-slate-400 hidden">Chưa có dữ liệu làm bài.</div>
+                        </div>
+                    </div>
+
+                    <!-- VIEW 6: TOOLS -->
+                    <div id="tools-view" class="hidden">
+                        <h2 class="text-3xl font-bold mb-8 text-slate-900 dark:text-white">Công cụ học tập 🛠️</h2>
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                            <!-- Pomodoro -->
+                            <div class="bg-white dark:bg-slate-900 rounded-[2.5rem] p-8 shadow-xl shadow-indigo-500/10 border border-white/50 dark:border-slate-800 relative overflow-hidden text-center">
+                                <div class="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-indigo-500/5 to-purple-500/5 pointer-events-none"></div>
+                                <h3 class="text-xl font-bold mb-6 flex items-center justify-center text-slate-800 dark:text-white"><i data-lucide="timer" class="w-6 h-6 mr-2 text-indigo-500"></i> Pomodoro Focus</h3>
+                                <div class="relative w-64 h-64 mx-auto mb-8">
+                                    <svg class="w-full h-full" viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="none" stroke="#f1f5f9" stroke-width="4" class="dark:stroke-slate-800" /><circle id="pomo-ring" cx="50" cy="50" r="45" fill="none" stroke="url(#gradient)" stroke-width="4" stroke-linecap="round" stroke-dasharray="283" stroke-dashoffset="0" class="progress-ring__circle" /><defs><linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#8b5cf6" /><stop offset="100%" stop-color="#ec4899" /></linearGradient></defs></svg>
+                                    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"><div class="text-6xl font-black text-slate-800 dark:text-white tabular-nums tracking-tighter" id="pomo-time">25:00</div><div class="text-xs font-bold text-slate-400 uppercase tracking-widest mt-2" id="pomo-status">Ready</div></div>
+                                </div>
+                                <div class="flex justify-center gap-4"><button onclick="toggleTimer()" id="pomo-btn" class="px-10 py-3.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-2xl font-bold shadow-lg hover:scale-105 transition w-40">Bắt đầu</button><button onclick="resetTimer()" class="p-3.5 bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-red-500 rounded-2xl transition"><i data-lucide="rotate-ccw"></i></button></div>
+                            </div>
+
+                            <!-- Reminder (New) & Todo -->
+                            <div class="space-y-6">
+                                <!-- Reminder Card -->
+                                <div class="bg-white dark:bg-slate-900 rounded-[2rem] p-6 shadow-sm border border-slate-100 dark:border-slate-800">
+                                    <div class="flex items-center justify-between mb-4">
+                                        <h3 class="text-lg font-bold flex items-center"><i data-lucide="bell" class="w-5 h-5 mr-2 text-yellow-500"></i> Nhắc nhở học tập</h3>
+                                        <div class="relative inline-block w-12 h-6 align-middle select-none transition duration-200 ease-in">
+                                            <input type="checkbox" name="toggle" id="reminder-toggle" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer transition-all duration-300 right-6 border-slate-300"/>
+                                            <label for="reminder-toggle" class="toggle-label block overflow-hidden h-6 rounded-full bg-slate-300 cursor-pointer transition-colors duration-300"></label>
+                                        </div>
+                                    </div>
+                                    <div class="flex gap-3">
+                                        <input type="time" id="reminder-time" class="flex-1 px-4 py-2 rounded-xl bg-slate-50 dark:bg-slate-950 border-none focus:ring-2 focus:ring-yellow-400 outline-none transition font-bold text-slate-700 dark:text-slate-200">
+                                        <button onclick="saveReminder()" class="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-xl font-bold text-sm transition shadow-lg shadow-yellow-500/20">Lưu</button>
+                                    </div>
+                                    <p class="text-xs text-slate-400 mt-2" id="reminder-status">Chưa đặt nhắc nhở.</p>
+                                </div>
+
+                                <!-- Todo List -->
+                                <div class="bg-white dark:bg-slate-900 rounded-[2rem] p-6 shadow-sm border border-slate-100 dark:border-slate-800 flex-1 flex flex-col">
+                                    <h3 class="text-lg font-bold mb-4 flex items-center"><i data-lucide="check-square" class="w-5 h-5 mr-2 text-green-500"></i> Việc cần làm</h3>
+                                    <div class="flex gap-2 mb-4"><input type="text" id="todo-input" placeholder="Thêm nhiệm vụ..." class="flex-1 px-5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border-none focus:ring-2 focus:ring-green-500 outline-none transition"><button onclick="addTodo()" class="p-2.5 bg-green-500 hover:bg-green-600 text-white rounded-xl transition shadow-lg shadow-green-500/20 hover:scale-105"><i data-lucide="plus" class="w-5 h-5"></i></button></div>
+                                    <div id="todo-list" class="space-y-2 overflow-y-auto max-h-[200px] custom-scrollbar pr-1"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- LOGIC -->
+    <script type="module">
+        import { firebaseConfig } from './key.js';
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+        import { getFirestore, collection, query, where, getDocs, doc, getDoc, addDoc, updateDoc, arrayUnion, arrayRemove, orderBy, limit, setDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let state = { grade: null, book: null, subject: null };
+        let lessonsCache = {}; 
+        let currentQuizData = [];
+        let currentLessonId = null;
+        let currentLessonTitle = "";
+        let currentUser = null;
+        // System Data fallback
+        const DEFAULT_DATA = { "Lớp 12": { books: ["Kết nối tri thức", "Cánh Diều"], subjects: ["Toán", "Văn"] } };
+        let systemData = DEFAULT_DATA;
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                currentUser = user;
+                document.getElementById('sidebar-email').textContent = user.displayName || user.email.split('@')[0];
+                document.getElementById('avatar-text').textContent = (user.email[0] || 'U').toUpperCase();
+                await loadSystemConfig();
+                loadReminderSettings(); // Load reminder
+                document.getElementById('app-loading').classList.add('hidden');
+                initApp();
+            } else { window.location.href = 'auth.html'; }
+        });
+
+        async function loadSystemConfig() {
+            try { const docSnap = await getDoc(doc(db, "system", "config")); if(docSnap.exists()) systemData = docSnap.data().structure || DEFAULT_DATA; } catch(e) { console.error(e); }
+        }
+
+        function initApp() { renderGrades(); loadTodos(); checkReminderLoop(); }
+
+        window.switchView = (view) => {
+            const navs = ['nav-home', 'nav-stats', 'nav-favorites', 'nav-tools'];
+            navs.forEach(id => { document.getElementById(id).classList.remove('bg-brand-50','text-brand-700','dark:bg-brand-900/20','dark:text-brand-400'); document.getElementById(id).classList.add('text-slate-600','dark:text-slate-400'); });
+            let activeNav = 'nav-home';
+            if(view === 'stats') activeNav = 'nav-stats'; if(view === 'favorites') activeNav = 'nav-favorites'; if(view === 'tools') activeNav = 'nav-tools';
+            document.getElementById(activeNav).classList.add('bg-brand-50','dark:bg-brand-900/20','text-brand-700','dark:text-brand-400');
+            ['navigation-view','lesson-list-view','lesson-viewer-view','stats-view','favorites-view','tools-view'].forEach(id => document.getElementById(id).classList.add('hidden'));
+            if(view === 'stats') { document.getElementById('stats-view').classList.remove('hidden'); loadStats(); }
+            else if(view === 'favorites') { document.getElementById('favorites-view').classList.remove('hidden'); loadFavorites(); }
+            else if(view === 'tools') document.getElementById('tools-view').classList.remove('hidden');
+            else if(view === 'viewer') document.getElementById('lesson-viewer-view').classList.remove('hidden');
+            else if(view === 'list') document.getElementById('lesson-list-view').classList.remove('hidden');
+            else document.getElementById('navigation-view').classList.remove('hidden');
+            updateBreadcrumb(view);
+        }
+
+        window.goHome = () => { state = { grade: null, book: null, subject: null }; switchView('navigation'); renderGrades(); }
+        window.goBack = () => {
+            const viewer = document.getElementById('lesson-viewer-view'); const list = document.getElementById('lesson-list-view');
+            if (!viewer.classList.contains('hidden')) switchView('list');
+            else if (!list.classList.contains('hidden')) { state.subject = null; switchView('navigation'); renderSubjects(); }
+            else if (state.subject) { state.subject = null; renderSubjects(); }
+            else if (state.book) { state.book = null; renderBooks(); }
+            else { state.grade = null; renderGrades(); }
+        }
+
+        // --- RENDERERS (Dynamic) ---
+        function renderGrades() {
+            const h = document.getElementById('page-heading'), s = document.getElementById('page-subheading'); if(h) h.textContent = "Chọn Khối Lớp"; 
+            document.getElementById('dynamic-grid').innerHTML = Object.keys(systemData).map(g => `<div onclick="selectGrade('${g}')" class="bg-white dark:bg-slate-900 p-6 rounded-[2rem] border border-white/50 dark:border-slate-800 shadow-sm hover:shadow-xl hover:-translate-y-1 hover:border-brand-200 transition-all cursor-pointer group"><div class="w-14 h-14 bg-brand-50 dark:bg-brand-900/20 rounded-2xl flex items-center justify-center text-brand-600 mb-5"><i data-lucide="graduation-cap" class="w-7 h-7"></i></div><h3 class="text-xl font-black text-slate-900 dark:text-white mb-1">${g}</h3><p class="text-sm text-slate-500 font-medium">Khám phá</p></div>`).join('');
+            lucide.createIcons(); updateBreadcrumb();
+        }
+        window.selectGrade = (g) => { state.grade = g; renderBooks(); };
+        function renderBooks() {
+            document.getElementById('page-heading').textContent = `Bộ sách ${state.grade}`;
+            document.getElementById('dynamic-grid').innerHTML = (systemData[state.grade].books||[]).map(b => `<div onclick="selectBook('${b}')" class="bg-white dark:bg-slate-900 p-8 rounded-[2rem] border border-white/50 dark:border-slate-800 shadow-sm hover:shadow-xl hover:border-green-200 transition-all cursor-pointer group text-center"><div class="w-20 h-20 bg-green-50 dark:bg-green-900/20 rounded-full flex items-center justify-center text-green-600 mx-auto mb-6"><i data-lucide="book-open" class="w-9 h-9"></i></div><h3 class="text-lg font-bold text-slate-900 dark:text-white">${b}</h3></div>`).join('');
+            lucide.createIcons(); updateBreadcrumb();
+        }
+        window.selectBook = (b) => { state.book = b; renderSubjects(); };
+        function renderSubjects() {
+            document.getElementById('page-heading').textContent = "Chọn Môn Học";
+            document.getElementById('dynamic-grid').innerHTML = (systemData[state.grade].subjects||[]).map(s => `<div onclick="selectSubject('${s}')" class="bg-white dark:bg-slate-900 p-6 rounded-[2rem] border border-white/50 dark:border-slate-800 shadow-sm hover:shadow-lg hover:border-purple-200 transition-all cursor-pointer group flex items-center justify-between"><div class="flex items-center gap-5"><div class="w-14 h-14 bg-purple-50 dark:bg-purple-900/20 rounded-2xl flex items-center justify-center text-purple-600"><i data-lucide="layers" class="w-7 h-7"></i></div><span class="text-xl font-bold text-slate-900 dark:text-white">${s}</span></div><i data-lucide="chevron-right" class="text-slate-300"></i></div>`).join('');
+            lucide.createIcons(); updateBreadcrumb();
+        }
+        window.selectSubject = (s) => { state.subject = s; fetchLessons(); };
+
+        async function fetchLessons() {
+            switchView('list');
+            const container = document.getElementById('lesson-container');
+            document.getElementById('filter-badge').textContent = `${state.grade} • ${state.subject} • ${state.book}`;
+            container.innerHTML = '<div class="text-center py-20"><div class="animate-spin w-10 h-10 border-4 border-brand-500 border-t-transparent rounded-full mx-auto mb-4"></div><p class="text-slate-500 font-bold">Đang tải...</p></div>';
+            const q = query(collection(db, "lessons"), where("filterKey", "==", `${state.grade}_${state.book}_${state.subject}`));
+            try {
+                const snapshot = await getDocs(q);
+                if (snapshot.empty) { container.innerHTML = `<div class="text-center py-20 bg-white dark:bg-slate-800 rounded-3xl border border-dashed border-slate-300 dark:border-slate-700"><p class="text-slate-500 font-medium">Chưa có bài học nào.</p></div>`; return; }
+                lessonsCache = {};
+                container.innerHTML = snapshot.docs.map(doc => {
+                    const d = doc.data(); if (d.status !== 'published') return '';
+                    lessonsCache[doc.id] = d;
+                    return `<div onclick="openLesson('${doc.id}')" class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md hover:border-brand-200 transition-all cursor-pointer group flex items-center justify-between"><div class="flex items-center gap-5"><div class="flex-shrink-0 w-12 h-12 bg-blue-50 dark:bg-blue-900/20 text-blue-600 rounded-xl flex items-center justify-center font-bold text-sm"><i data-lucide="play-circle" class="w-6 h-6"></i></div><div><p class="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-1">${d.chapter||'BÀI HỌC'}</p><h3 class="text-lg font-bold text-slate-900 dark:text-white line-clamp-1">${d.title}</h3></div></div><div class="p-2 bg-slate-50 dark:bg-slate-700 rounded-lg text-slate-400 group-hover:text-brand-500 transition"><i data-lucide="arrow-right" class="w-5 h-5"></i></div></div>`;
+                }).join('');
+                lucide.createIcons();
+            } catch (e) { container.innerHTML = `<p class="text-red-500 text-center py-10">Lỗi: ${e.message}</p>`; }
+        }
+
+        window.switchLessonTab = (tab) => {
+            document.getElementById('tab-content-theory').classList.add('hidden');
+            document.getElementById('tab-content-quiz').classList.add('hidden');
+            document.getElementById('tab-btn-theory').className = "tab-btn px-6 py-3 font-bold text-sm flex items-center text-slate-500 hover:text-slate-700 dark:hover:text-slate-300";
+            document.getElementById('tab-btn-quiz').className = "tab-btn px-6 py-3 font-bold text-sm flex items-center text-slate-500 hover:text-slate-700 dark:hover:text-slate-300";
+            if (tab === 'theory') { document.getElementById('tab-content-theory').classList.remove('hidden'); document.getElementById('tab-btn-theory').classList.add('tab-active'); } 
+            else { document.getElementById('tab-content-quiz').classList.remove('hidden'); document.getElementById('tab-btn-quiz').classList.add('tab-active'); }
+            lucide.createIcons();
+        }
+
+        window.openLesson = (id) => {
+            const data = lessonsCache[id]; if (!data) return;
+            currentLessonId = id; currentLessonTitle = data.title;
+            switchView('viewer'); switchLessonTab('theory');
+            document.getElementById('viewer-title').textContent = data.title;
+            document.getElementById('viewer-subtitle').textContent = (data.chapter || '').toUpperCase();
+            document.getElementById('lesson-content').innerHTML = data.content || '';
+            if (window.renderMathInElement) renderMathInElement(document.getElementById('lesson-content'), { delimiters: [{left: "$$", right: "$$", display: true}, {left: "$", right: "$", display: false}] });
+            checkFavoriteStatus(id);
+            
+            const quizContainer = document.getElementById('quiz-container');
+            const submitBtn = document.getElementById('submit-quiz-btn');
+            submitBtn.disabled = false; submitBtn.innerHTML = `<span>Nộp bài</span><i data-lucide="send" class="w-4 h-4 ml-2"></i>`; 
+            submitBtn.classList.remove('bg-slate-700','cursor-default');
+            const badge = document.getElementById('quiz-score-badge');
+            if(badge) badge.classList.add('hidden');
+            
+            if (data.quiz && data.quiz.length > 0) {
+                currentQuizData = data.quiz;
+                document.getElementById('no-quiz-msg').classList.add('hidden');
+                submitBtn.classList.remove('hidden');
+                quizContainer.innerHTML = data.quiz.map((q, idx) => `<div class="bg-slate-50 dark:bg-slate-950/50 p-6 rounded-2xl border border-slate-100 dark:border-slate-800" id="q-${idx}"><h4 class="font-bold text-slate-800 dark:text-slate-200 mb-4 flex text-base"><span class="text-brand-600 mr-3 bg-brand-100 dark:bg-brand-900/30 px-2 py-0.5 rounded text-xs h-fit mt-0.5">Câu ${idx + 1}</span> ${q.question}</h4><div class="space-y-2.5">${q.options.map((opt, oIdx) => `<label class="quiz-option flex items-center p-3.5 rounded-xl border border-transparent bg-white dark:bg-slate-900/80 hover:border-brand-200 dark:hover:border-slate-700 cursor-pointer transition-all shadow-sm" id="opt-${idx}-${oIdx}"><input type="radio" name="q-${idx}" value="${oIdx}" class="w-4 h-4 mr-3 accent-brand-600"><span class="text-sm font-medium text-slate-600 dark:text-slate-300">${opt}</span></label>`).join('')}</div><div class="feedback hidden mt-4 text-sm font-bold p-3 rounded-xl animate-fade-up"></div></div>`).join('');
+            } else {
+                quizContainer.innerHTML = '';
+                document.getElementById('no-quiz-msg').classList.remove('hidden');
+                submitBtn.classList.add('hidden');
+            }
+        }
+
+        window.submitQuiz = async () => {
+            let score = 0; const answers = [];
+            currentQuizData.forEach((q, idx) => {
+                const selected = document.querySelector(`input[name="q-${idx}"]:checked`);
+                const feedback = document.querySelector(`#q-${idx} .feedback`);
+                const val = selected ? parseInt(selected.value) : -1;
+                answers.push(val);
+                feedback.classList.remove('hidden', 'bg-yellow-100', 'bg-green-100', 'bg-red-100', 'text-yellow-700', 'text-green-700', 'text-red-700');
+                if (val === q.correct) { score++; document.getElementById(`opt-${idx}-${val}`).classList.add('quiz-correct'); feedback.classList.add('bg-green-100', 'text-green-700'); feedback.textContent = "Chính xác!"; } 
+                else if (val !== -1) { document.getElementById(`opt-${idx}-${val}`).classList.add('quiz-wrong'); document.getElementById(`opt-${idx}-${q.correct}`).classList.add('quiz-correct'); feedback.classList.add('bg-red-100', 'text-red-700'); feedback.textContent = `Sai rồi. Đáp án: ${q.options[q.correct]}`; } 
+                else { feedback.classList.add('bg-yellow-100', 'text-yellow-700'); feedback.textContent = "Chưa chọn đáp án"; }
+            });
+            const btn = document.getElementById('submit-quiz-btn');
+            btn.innerHTML = `Kết quả: ${score}/${currentQuizData.length} điểm`;
+            btn.className = "w-full mt-6 py-3 bg-slate-800 text-white rounded-xl font-bold cursor-default opacity-80";
+            btn.disabled = true;
+            const badge = document.getElementById('quiz-score-badge');
+            if(badge) { badge.textContent = `${score}/${currentQuizData.length}`; badge.classList.remove('hidden'); }
+            if(score === currentQuizData.length && score > 0) confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+            try { await addDoc(collection(db, "quiz_results"), { userId: currentUser.uid, lessonId: currentLessonId, lessonTitle: currentLessonTitle, score: score, total: currentQuizData.length, timestamp: new Date().toISOString(), answers: answers }); } catch (e) { console.error(e); }
+        }
+
+        // --- FAVORITES & STATS ---
+        async function checkFavoriteStatus(id) {
+            const icon = document.getElementById('icon-heart');
+            const docSnap = await getDoc(doc(db, "users", currentUser.uid));
+            if (docSnap.exists() && docSnap.data().favorites && docSnap.data().favorites.includes(id)) icon.classList.add('fill-pink-500', 'text-pink-500');
+            else icon.classList.remove('fill-pink-500', 'text-pink-500');
+        }
+        window.toggleFavorite = async () => {
+            const icon = document.getElementById('icon-heart'); const userRef = doc(db, "users", currentUser.uid); const isLiked = icon.classList.contains('fill-pink-500');
+            icon.classList.toggle('fill-pink-500'); icon.classList.toggle('text-pink-500'); if(!isLiked) icon.parentElement.classList.add('animate-heart'); setTimeout(() => icon.parentElement.classList.remove('animate-heart'), 400);
+            try { if (isLiked) await updateDoc(userRef, { favorites: arrayRemove(currentLessonId) }); else await updateDoc(userRef, { favorites: arrayUnion(currentLessonId) }); } catch (e) { console.error(e); }
+        }
+        async function loadFavorites() {
+            const container = document.getElementById('favorites-container'); container.innerHTML = '<div class="text-center py-20"><div class="animate-spin w-10 h-10 border-4 border-brand-500 border-t-transparent rounded-full mx-auto mb-4"></div></div>';
+            try {
+                const userSnap = await getDoc(doc(db, "users", currentUser.uid)); const favIds = userSnap.data().favorites || [];
+                if (favIds.length === 0) { container.innerHTML = `<div class="text-center py-20 bg-white dark:bg-slate-800 rounded-3xl"><p class="text-slate-500">Chưa có bài học yêu thích.</p></div>`; return; }
+                container.innerHTML = '';
+                for (const id of favIds) {
+                    const dSnap = await getDoc(doc(db, "lessons", id));
+                    if(dSnap.exists()) { const d = dSnap.data(); lessonsCache[dSnap.id] = d; container.innerHTML += `<div onclick="openLesson('${dSnap.id}')" class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-all cursor-pointer flex items-center justify-between mb-3"><div class="flex items-center gap-4"><i data-lucide="heart" class="w-5 h-5 text-pink-500 fill-current"></i><h3 class="font-bold text-slate-900 dark:text-white">${d.title}</h3></div><i data-lucide="chevron-right" class="w-5 h-5 text-slate-400"></i></div>`; }
+                }
+                lucide.createIcons();
+            } catch (e) { console.error(e); }
+        }
+        async function loadStats() {
+            const tbody = document.getElementById('stats-history-body'); tbody.innerHTML = '<tr><td colspan="3" class="p-8 text-center text-slate-400">Đang tải...</td></tr>';
+            try {
+                const q = query(collection(db, "quiz_results"), where("userId", "==", currentUser.uid), orderBy("timestamp", "desc"), limit(20));
+                const snapshot = await getDocs(q);
+                let totalQ = 0, totalS = 0, totalM = 0;
+                if (snapshot.empty) { tbody.innerHTML = ''; document.getElementById('stats-empty').classList.remove('hidden'); return; }
+                document.getElementById('stats-empty').classList.add('hidden');
+                tbody.innerHTML = snapshot.docs.map(doc => {
+                    const d = doc.data(); totalQ++; totalS += d.score; totalM += d.total;
+                    const pct = Math.round((d.score / d.total) * 100);
+                    const cl = pct >= 80 ? 'text-green-600 bg-green-50' : (pct >= 50 ? 'text-yellow-600 bg-yellow-50' : 'text-red-600 bg-red-50');
+                    return `<tr class="border-b border-slate-100 dark:border-slate-800 last:border-0"><td class="px-6 py-4 font-medium text-slate-900 dark:text-white">${d.lessonTitle}</td><td class="px-6 py-4"><span class="px-2 py-1 rounded-lg text-xs font-bold ${cl}">${d.score}/${d.total}</span></td><td class="px-6 py-4 text-slate-500 text-sm">${new Date(d.timestamp).toLocaleDateString('vi-VN')}</td></tr>`;
+                }).join('');
+                document.getElementById('stat-total-quizzes').textContent = totalQ; document.getElementById('stat-avg-score').textContent = totalM > 0 ? ((totalS / totalM) * 10).toFixed(1) : '0.0';
+            } catch (e) { tbody.innerHTML = `<tr><td colspan="3" class="p-8 text-center text-red-400 text-sm">Cần tạo Index Firestore (Xem Console)</td></tr>`; console.error(e); }
+        }
+
+        // --- REMINDER & TOOLS ---
+        let timerInterval; let timeLeft = 25 * 60; let isRunning = false;
+        window.toggleTimer = () => { const btn = document.getElementById('pomo-btn'); if (isRunning) { clearInterval(timerInterval); btn.textContent = "Tiếp tục"; btn.classList.remove('bg-red-500'); } else { timerInterval = setInterval(updateTimer, 1000); btn.textContent = "Tạm dừng"; btn.classList.add('bg-red-500'); } isRunning = !isRunning; }
+        window.resetTimer = () => { clearInterval(timerInterval); timeLeft = 25 * 60; isRunning = false; updateDisplay(); document.getElementById('pomo-btn').textContent = "Bắt đầu"; document.getElementById('pomo-btn').classList.remove('bg-red-500'); }
+        function updateTimer() { if (timeLeft > 0) { timeLeft--; updateDisplay(); const total = 25 * 60; const offset = 283 - (timeLeft / total) * 283; document.getElementById('pomo-ring').style.strokeDashoffset = offset; } else { clearInterval(timerInterval); alert("Hết giờ!"); isRunning = false; } }
+        function updateDisplay() { const m = Math.floor(timeLeft / 60).toString().padStart(2, '0'); const s = (timeLeft % 60).toString().padStart(2, '0'); document.getElementById('pomo-time').textContent = `${m}:${s}`; document.getElementById('pomo-status').textContent = isRunning ? "Focusing..." : "Ready"; }
+        
+        window.addTodo = () => { const input = document.getElementById('todo-input'); const text = input.value.trim(); if (!text) return; const todos = JSON.parse(localStorage.getItem('chill_todos') || '[]'); todos.push({ text, done: false }); localStorage.setItem('chill_todos', JSON.stringify(todos)); input.value = ''; renderTodos(); }
+        window.toggleTodo = (idx) => { const todos = JSON.parse(localStorage.getItem('chill_todos') || '[]'); todos[idx].done = !todos[idx].done; localStorage.setItem('chill_todos', JSON.stringify(todos)); renderTodos(); }
+        window.deleteTodo = (idx) => { const todos = JSON.parse(localStorage.getItem('chill_todos') || '[]'); todos.splice(idx, 1); localStorage.setItem('chill_todos', JSON.stringify(todos)); renderTodos(); }
+        function loadTodos() { renderTodos(); }
+        function renderTodos() { const todos = JSON.parse(localStorage.getItem('chill_todos') || '[]'); const container = document.getElementById('todo-list'); if (todos.length === 0) { container.innerHTML = '<div class="flex flex-col items-center justify-center h-full text-slate-400 text-sm"><i data-lucide="clipboard-list" class="w-8 h-8 mb-2 opacity-50"></i><p>Chưa có nhiệm vụ nào</p></div>'; lucide.createIcons(); return; } container.innerHTML = todos.map((t, i) => `<div class="flex items-center justify-between p-3.5 bg-slate-50 dark:bg-slate-950/50 rounded-xl group hover:bg-white dark:hover:bg-slate-900 transition-colors border border-transparent hover:border-slate-100 dark:hover:border-slate-800"><div class="flex items-center gap-3.5 cursor-pointer flex-1" onclick="toggleTodo(${i})"><div class="w-5 h-5 rounded-lg border-2 ${t.done ? 'bg-green-500 border-green-500' : 'border-slate-300 dark:border-slate-600'} flex items-center justify-center transition-colors">${t.done ? '<i data-lucide="check" class="w-3.5 h-3.5 text-white"></i>' : ''}</div><span class="text-sm font-medium ${t.done ? 'line-through text-slate-400' : 'text-slate-700 dark:text-slate-200'}">${t.text}</span></div><button onclick="deleteTodo(${i})" class="text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"><i data-lucide="trash-2" class="w-4 h-4"></i></button></div>`).join(''); lucide.createIcons(); }
+
+        // --- REMINDER LOGIC (NEW) ---
+        async function saveReminder() {
+            const time = document.getElementById('reminder-time').value;
+            const enabled = document.getElementById('reminder-toggle').checked;
+            
+            if (enabled && "Notification" in window && Notification.permission !== "granted") {
+                await Notification.requestPermission();
+            }
+            
+            // Save to Firestore for sync
+            try {
+                await updateDoc(doc(db, "users", currentUser.uid), { 
+                    reminder: { time, enabled } 
+                });
+                document.getElementById('reminder-status').textContent = enabled ? `Đã hẹn giờ: ${time}` : "Đã tắt nhắc nhở.";
+                alert("Đã lưu cài đặt nhắc nhở!");
+            } catch (e) { console.error(e); }
+        }
+        window.saveReminder = saveReminder;
+
+        async function loadReminderSettings() {
+            try {
+                const docSnap = await getDoc(doc(db, "users", currentUser.uid));
+                const settings = docSnap.data().reminder;
+                if (settings) {
+                    document.getElementById('reminder-time').value = settings.time || '';
+                    document.getElementById('reminder-toggle').checked = settings.enabled || false;
+                    document.getElementById('reminder-status').textContent = settings.enabled ? `Đã hẹn giờ: ${settings.time}` : "Đã tắt nhắc nhở.";
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        // Background Loop for Notification
+        function checkReminderLoop() {
+            setInterval(async () => {
+                try {
+                    const docSnap = await getDoc(doc(db, "users", currentUser.uid));
+                    const settings = docSnap.data().reminder;
+                    
+                    if (settings && settings.enabled && settings.time) {
+                        const now = new Date();
+                        const currentHM = now.toTimeString().substr(0, 5);
+                        
+                        if (currentHM === settings.time && now.getSeconds() < 5) { // Trigger within 1st 5s of minute
+                             if (Notification.permission === "granted") {
+                                new Notification("Chillpromax", { body: "Đến giờ học rồi bạn ơi! 📚", icon: "https://img.icons8.com/fluency/96/student-male.png" });
+                             } else {
+                                alert("Đến giờ học rồi bạn ơi! 📚");
+                             }
+                        }
+                    }
+                } catch (e) {}
+            }, 5000); // Check every 5s
+        }
+
+        // UTILS
+        function updateBreadcrumb(view) {
+            const c = document.getElementById('breadcrumb-container');
+            if(view === 'tools') c.innerHTML = '<i data-lucide="layout-grid" class="w-4 h-4 mr-2 text-brand-500"></i><span class="text-slate-800 dark:text-white">Công cụ</span>';
+            else if(view === 'favorites') c.innerHTML = '<i data-lucide="heart" class="w-4 h-4 mr-2 text-pink-500"></i><span class="text-slate-800 dark:text-white">Yêu thích</span>';
+            else c.innerHTML = '<i data-lucide="home" class="w-4 h-4 mr-2 text-brand-500"></i><span class="text-slate-800 dark:text-white">Trang chủ</span>';
+            lucide.createIcons();
+        }
+        window.handleLogout = () => signOut(auth).then(() => { localStorage.removeItem('chill_user'); window.location.href = 'auth.html'; });
+        window.toggleTheme = () => { document.documentElement.classList.toggle('dark'); localStorage.setItem('chill_theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light'); }
+        lucide.createIcons();
+    </script>
+</body>
+</html>

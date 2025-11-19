@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Chillpromax</title>
+    
+    <!-- CSS Framework & Icons -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Editor Libraries -->
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+    
+    <script>
+        tailwind.config = { 
+            darkMode: 'class', 
+            theme: { 
+                extend: { 
+                    fontFamily: { sans: ['"Be Vietnam Pro"', 'sans-serif'] }, 
+                    colors: { brand: { 50: '#f5f3ff', 100: '#ede9fe', 200: '#ddd6fe', 300: '#c4b5fd', 400: '#a78bfa', 500: '#8b5cf6', 600: '#7c3aed', 700: '#6d28d9' } },
+                    boxShadow: { 'soft': '0 4px 20px -2px rgba(0, 0, 0, 0.05)' }
+                } 
+            } 
+        }
+        if (localStorage.getItem('chill_theme') === 'dark') document.documentElement.classList.add('dark');
+    </script>
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        .dark ::-webkit-scrollbar-thumb { background: #475569; }
+        
+        /* Animations */
+        @keyframes scaleIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+        .animate-scale-in { animation: scaleIn 0.2s ease-out forwards; }
+
+        /* Editor Styling */
+        .custom-input:focus { border-color: #8b5cf6; box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15); }
+        .ql-toolbar.ql-snow { border-top-left-radius: 0.75rem; border-top-right-radius: 0.75rem; border-color: #e2e8f0; background: #f8fafc; }
+        .ql-container.ql-snow { border-bottom-left-radius: 0.75rem; border-bottom-right-radius: 0.75rem; border-color: #e2e8f0; font-family: 'Be Vietnam Pro', sans-serif; font-size: 1rem; }
+        .ql-editor { min-height: 300px; }
+        
+        /* Dark Mode Editor */
+        .dark .ql-toolbar.ql-snow { background: #1e293b; border-color: #334155; }
+        .dark .ql-container.ql-snow { border-color: #334155; background: #0f172a; color: #e2e8f0; }
+        .dark .ql-snow .ql-stroke { stroke: #cbd5e1; }
+        .dark .ql-snow .ql-fill { fill: #cbd5e1; }
+        .dark .ql-snow .ql-picker { color: #cbd5e1; }
+        .ql-tooltip { z-index: 9999 !important; } /* Fix tooltip hidden in modal */
+
+        /* Dynamic Add Card */
+        .add-card { border: 2px dashed #cbd5e1; color: #94a3b8; transition: all 0.2s; }
+        .add-card:hover { border-color: #8b5cf6; color: #8b5cf6; background: rgba(139, 92, 246, 0.05); }
+        .dark .add-card { border-color: #334155; color: #64748b; }
+        .dark .add-card:hover { border-color: #8b5cf6; color: #8b5cf6; background: rgba(139, 92, 246, 0.1); }
+    </style>
+</head>
+<body class="bg-[#F8FAFC] text-slate-900 dark:bg-[#0B1120] dark:text-slate-100 transition-colors duration-300 font-sans overflow-hidden selection:bg-brand-500 selection:text-white">
+
+    <div id="app-loading" class="fixed inset-0 z-[100] bg-white dark:bg-[#0B1120] flex flex-col items-center justify-center">
+        <div class="w-12 h-12 border-4 border-brand-200 border-t-brand-600 rounded-full animate-spin mb-4"></div>
+        <p class="text-slate-500 text-sm font-medium animate-pulse">Đang khởi động hệ thống...</p>
+    </div>
+
+    <div class="flex h-screen overflow-hidden">
+
+        <!-- SIDEBAR -->
+        <aside class="hidden md:flex w-72 flex-col bg-white dark:bg-slate-900 border-r border-slate-200/60 dark:border-slate-800 z-30 shadow-sm">
+            <div class="h-20 flex items-center px-8 border-b border-slate-100 dark:border-slate-800">
+                <div class="flex items-center space-x-3 text-brand-600 font-black text-2xl tracking-tight">
+                    <div class="w-10 h-10 bg-gradient-to-br from-brand-500 to-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-brand-500/30"><i data-lucide="zap" class="w-6 h-6 fill-current"></i></div>
+                    <span>Chill<span class="text-slate-800 dark:text-white font-light">Admin</span></span>
+                </div>
+            </div>
+
+            <nav class="flex-1 py-6 px-4 space-y-2 overflow-y-auto custom-scrollbar">
+                <button onclick="switchTab('lessons')" id="nav-lessons" class="w-full flex items-center px-4 py-3.5 rounded-2xl transition-all duration-200 group bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-400">
+                    <i data-lucide="layout-grid" class="w-5 h-5 mr-4"></i><span class="font-semibold">Quản lý học liệu</span>
+                </button>
+                <button onclick="switchTab('users')" id="nav-users" class="w-full flex items-center px-4 py-3.5 rounded-2xl transition-all duration-200 group text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">
+                    <i data-lucide="users" class="w-5 h-5 mr-4"></i><span class="font-semibold">Quản lý tài khoản</span>
+                </button>
+                <button onclick="switchTab('stats')" id="nav-stats" class="w-full flex items-center px-4 py-3.5 rounded-2xl transition-all duration-200 group text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">
+                    <i data-lucide="pie-chart" class="w-5 h-5 mr-4"></i><span class="font-semibold">Thống kê</span>
+                </button>
+            </nav>
+
+            <div class="p-6 border-t border-slate-100 dark:border-slate-800">
+                <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50 mb-4 flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-500 to-cyan-400 flex items-center justify-center text-white font-bold text-xs shadow-md">AD</div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-bold truncate" id="sidebar-email">Admin</p>
+                        <p class="text-[10px] text-green-500 font-bold bg-green-100 dark:bg-green-900/30 px-2 py-0.5 rounded-full w-fit mt-0.5">ONLINE</p>
+                    </div>
+                </div>
+                <button onclick="handleLogout()" class="w-full py-2.5 text-xs font-bold text-red-500 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-200 rounded-xl transition-all flex items-center justify-center">
+                    <i data-lucide="log-out" class="w-3 h-3 mr-2"></i> Đăng xuất
+                </button>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <div class="flex-1 flex flex-col min-w-0 overflow-hidden relative bg-[#F8FAFC] dark:bg-[#0B1120]">
+            
+            <!-- TOPBAR -->
+            <header class="h-20 flex items-center justify-between px-8 sticky top-0 z-20 backdrop-blur-md bg-white/70 dark:bg-[#0B1120]/80 border-b border-slate-200/60 dark:border-slate-800/60">
+                
+                <!-- Header Left: Menu + Back Button + Title -->
+                <div class="flex items-center gap-4">
+                    <!-- Mobile Menu -->
+                    <button class="md:hidden p-2 -ml-2 text-slate-600 rounded-xl hover:bg-slate-100"><i data-lucide="menu"></i></button>
+                    
+                    <!-- Nút Quay Lại (Mới) -->
+                    <button id="header-back-btn" onclick="goBack()" class="hidden p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 transition-colors" title="Quay lại">
+                        <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                    </button>
+
+                    <div class="hidden md:flex items-center" id="breadcrumb-container">
+                        <h1 class="text-xl font-bold text-slate-800 dark:text-white">Tổng quan</h1>
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-4">
+                    <a href="app-student.html" target="_blank" class="hidden md:flex items-center px-4 py-2 text-sm font-semibold text-brand-600 bg-brand-50 dark:bg-brand-900/20 rounded-full hover:bg-brand-100 dark:hover:bg-brand-900/30 transition"><i data-lucide="external-link" class="w-4 h-4 mr-2"></i> Xem App</a>
+                    <button onclick="toggleTheme()" class="w-10 h-10 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-500 hover:text-brand-600 hover:border-brand-200 transition shadow-sm">
+                        <i data-lucide="moon" class="dark:hidden w-5 h-5"></i><i data-lucide="sun" class="hidden dark:block w-5 h-5 text-yellow-400"></i>
+                    </button>
+                </div>
+            </header>
+
+            <!-- MAIN SCROLL -->
+            <main class="flex-1 overflow-y-auto p-4 md:p-8" id="main-scroll">
+                <div class="max-w-7xl mx-auto pb-20">
+                    
+                    <!-- TAB 1: LESSONS (DYNAMIC) -->
+                    <div id="tab-lessons" class="animate-scale-in space-y-8">
+                        <div id="dynamic-content" class="grid grid-cols-1 md:grid-cols-3 gap-6"></div>
+                        <div id="lesson-list-container" class="hidden animate-scale-in">
+                            <div class="flex justify-between items-center mb-6">
+                                <div><h2 class="text-2xl font-bold text-slate-800 dark:text-white">Danh sách bài học</h2><p class="text-slate-500 text-sm mt-1">Quản lý nội dung & câu hỏi</p></div>
+                                <button onclick="openEditor('new')" class="px-6 py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-bold shadow-lg shadow-brand-500/20 hover:-translate-y-0.5 transition-all flex items-center"><i data-lucide="plus-circle" class="w-5 h-5 mr-2"></i> Thêm mới</button>
+                            </div>
+                            <div class="grid gap-4" id="lesson-list-items"></div>
+                        </div>
+                    </div>
+
+                    <!-- TAB 2: USERS -->
+                    <div id="tab-users" class="hidden animate-scale-in space-y-6">
+                         <div class="flex flex-col md:flex-row justify-between items-center gap-4 bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200/60 dark:border-slate-800 shadow-sm">
+                            <div><h2 class="text-xl font-bold">Danh sách thành viên</h2><p class="text-sm text-slate-500">Tổng hợp tất cả tài khoản</p></div>
+                            <div class="relative w-full md:w-80 group">
+                                <input type="text" id="user-search" oninput="filterUsers()" placeholder="Tìm kiếm email..." class="w-full pl-11 pr-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-none ring-1 ring-slate-200 dark:ring-slate-700 focus:ring-2 focus:ring-brand-500 transition-all outline-none">
+                                <i data-lucide="search" class="absolute left-4 top-3.5 w-5 h-5 text-slate-400"></i>
+                            </div>
+                        </div>
+                        <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/60 dark:border-slate-800 shadow-sm overflow-hidden">
+                            <div class="overflow-x-auto"><table class="w-full text-left"><thead class="bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800"><tr><th class="px-8 py-5 text-xs font-bold text-slate-500 uppercase">Người dùng</th><th class="px-8 py-5 text-xs font-bold text-slate-500 uppercase">Vai trò</th><th class="px-8 py-5 text-xs font-bold text-slate-500 uppercase text-right">Thao tác</th></tr></thead><tbody id="users-table-body" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody></table></div>
+                            <div id="users-loading" class="p-12 text-center text-slate-400">Đang tải dữ liệu...</div>
+                        </div>
+                    </div>
+
+                    <!-- TAB 3: STATS -->
+                    <div id="tab-stats" class="hidden animate-scale-in">
+                         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div class="bg-gradient-to-br from-brand-500 to-violet-600 rounded-[2rem] p-8 text-white shadow-xl shadow-brand-500/20 relative overflow-hidden group hover:scale-[1.02] transition-transform">
+                                <div class="absolute top-0 right-0 p-6 opacity-20"><i data-lucide="users" class="w-24 h-24"></i></div>
+                                <p class="text-brand-100 font-medium mb-2 uppercase tracking-wider text-xs">Tổng thành viên</p><h3 class="text-5xl font-black" id="stat-users">0</h3>
+                            </div>
+                            <div class="bg-white dark:bg-slate-900 rounded-[2rem] p-8 border border-slate-200 dark:border-slate-700 shadow-sm relative overflow-hidden group hover:border-green-500 transition-colors">
+                                <div class="flex items-center justify-between mb-6"><div class="p-4 bg-green-100 dark:bg-green-900/30 text-green-600 rounded-2xl"><i data-lucide="book-open" class="w-8 h-8"></i></div><span class="text-xs font-bold bg-green-50 text-green-600 px-3 py-1 rounded-full">LIVE</span></div>
+                                <h3 class="text-4xl font-bold text-slate-900 dark:text-white mb-1" id="stat-lessons">0</h3><p class="text-slate-500 font-medium">Bài học hệ thống</p>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- MODAL EDITOR (WIZARD) -->
+    <div id="editor-panel" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 transition-opacity duration-300">
+        <div class="bg-white dark:bg-[#1E293B] rounded-3xl shadow-2xl w-full max-w-6xl h-[90vh] flex flex-col animate-scale-in ring-1 ring-white/10 overflow-hidden">
+            <!-- Header -->
+            <div class="px-8 py-5 border-b border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800 flex justify-between items-center sticky top-0 z-20">
+                <div class="flex items-center gap-4">
+                    <button onclick="closeEditor()" class="p-2 -ml-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition"><i data-lucide="arrow-left" class="w-5 h-5"></i></button>
+                    <div><h2 class="text-xl font-bold text-slate-800 dark:text-white" id="editor-title-text">Soạn bài học</h2><p class="text-xs text-slate-500" id="editor-subtitle">...</p></div>
+                </div>
+                <div class="flex items-center space-x-1 md:space-x-4 bg-slate-50 dark:bg-slate-900/50 px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700">
+                    <div class="flex items-center" id="step-indicator-1"><div class="step-dot w-7 h-7 rounded-full border-2 flex items-center justify-center font-bold text-xs mr-2">1</div><span class="text-xs font-bold hidden md:block">Thông tin</span></div>
+                    <div class="w-6 h-px bg-slate-300 dark:bg-slate-600"></div>
+                    <div class="flex items-center" id="step-indicator-2"><div class="step-dot w-7 h-7 rounded-full border-2 flex items-center justify-center font-bold text-xs mr-2">2</div><span class="text-xs font-bold hidden md:block">Nội dung</span></div>
+                    <div class="w-6 h-px bg-slate-300 dark:bg-slate-600"></div>
+                    <div class="flex items-center" id="step-indicator-3"><div class="step-dot w-7 h-7 rounded-full border-2 flex items-center justify-center font-bold text-xs mr-2">3</div><span class="text-xs font-bold hidden md:block">Quiz</span></div>
+                </div>
+                <div class="flex gap-3">
+                    <button onclick="saveLesson('draft')" class="px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 font-bold text-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition">Lưu Nháp</button>
+                    <button onclick="saveLesson('published')" class="px-6 py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-bold text-sm shadow-lg shadow-brand-500/20 transition">Đăng Bài</button>
+                </div>
+            </div>
+
+            <!-- Body -->
+            <div class="flex-1 overflow-y-auto bg-[#F8FAFC] dark:bg-[#0f172a] p-6 md:p-10 custom-scrollbar relative">
+                <!-- STEP 1 -->
+                <div id="step-content-1" class="space-y-6 max-w-2xl mx-auto animate-scale-in">
+                    <div class="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700">
+                        <h3 class="text-lg font-bold mb-6 flex items-center"><i data-lucide="info" class="w-5 h-5 mr-2 text-brand-500"></i> Thông tin chung</h3>
+                        <div class="space-y-5">
+                            <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Tên Chương</label><input type="text" id="input-chapter" placeholder="VD: Chương 1: Hàm số" class="custom-input w-full p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 outline-none"></div>
+                            <div><label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Tên Bài Học</label><input type="text" id="input-title" placeholder="VD: Bài 1: Tính đơn điệu..." class="custom-input w-full p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 outline-none"></div>
+                        </div>
+                    </div>
+                </div>
+                <!-- STEP 2 -->
+                <div id="step-content-2" class="hidden h-full flex flex-col animate-scale-in">
+                    <div class="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 h-full flex flex-col relative" id="editor-container-wrapper">
+                         <div class="flex justify-between mb-4 px-2"><label class="block text-xs font-bold text-slate-500 uppercase tracking-wider">Soạn thảo nội dung</label><span class="text-xs text-slate-400 font-medium bg-slate-100 dark:bg-slate-900 px-2 py-1 rounded">Ctrl+V để dán ảnh</span></div>
+                        <div id="quill-editor" class="bg-white dark:bg-slate-900 text-slate-900 dark:text-white flex-1 rounded-xl"></div>
+                        <div id="upload-status" class="absolute bottom-4 right-6 text-xs text-brand-500 font-bold"></div>
+                    </div>
+                </div>
+                <!-- STEP 3 -->
+                <div id="step-content-3" class="hidden space-y-6 max-w-4xl mx-auto animate-scale-in pb-20">
+                    <div class="flex justify-between items-center mb-4"><h3 class="text-lg font-bold">Danh sách câu hỏi</h3><button onclick="addQuizQuestion()" class="px-5 py-2.5 bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-300 rounded-xl font-bold text-sm hover:bg-blue-200 transition flex items-center"><i data-lucide="plus" class="w-4 h-4 mr-2"></i> Thêm câu hỏi</button></div>
+                    <div id="quiz-container" class="space-y-5"></div>
+                    <div id="empty-quiz" class="text-center p-12 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-3xl"><div class="w-14 h-14 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-400"><i data-lucide="help-circle" class="w-8 h-8"></i></div><p class="text-slate-500 font-medium">Chưa có câu hỏi nào.</p></div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="p-5 border-t border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800 flex justify-between">
+                <button onclick="prevStep()" id="btn-prev" class="px-6 py-3 rounded-xl font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 transition disabled:opacity-50">Quay lại</button>
+                <button onclick="nextStep()" id="btn-next" class="px-8 py-3 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-xl font-bold shadow-lg hover:shadow-xl transition transform active:scale-95">Tiếp tục</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- QUIZ TEMPLATE -->
+    <template id="quiz-template">
+        <div class="quiz-item bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm relative group hover:border-brand-200 transition">
+            <div class="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition"><button onclick="removeQuiz(this)" class="p-2 text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition"><i data-lucide="trash-2" class="w-4 h-4"></i></button></div>
+            <div class="mb-5"><label class="block text-xs font-bold text-brand-500 uppercase mb-2">Câu hỏi <span class="q-idx">1</span></label><input type="text" class="q-title w-full p-3 bg-slate-50 dark:bg-slate-900 rounded-xl border-none outline-none font-medium focus:ring-2 focus:ring-brand-500 transition" placeholder="Nhập nội dung câu hỏi..."></div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="flex items-center gap-3 p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus-within:border-brand-500 transition"><input type="radio" name="correct-q-UID" class="q-correct w-4 h-4 accent-brand-600 cursor-pointer" value="0"><input type="text" class="q-opt-0 w-full bg-transparent outline-none text-sm font-medium" placeholder="Đáp án A"></div>
+                <div class="flex items-center gap-3 p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus-within:border-brand-500 transition"><input type="radio" name="correct-q-UID" class="q-correct w-4 h-4 accent-brand-600 cursor-pointer" value="1"><input type="text" class="q-opt-1 w-full bg-transparent outline-none text-sm font-medium" placeholder="Đáp án B"></div>
+                <div class="flex items-center gap-3 p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus-within:border-brand-500 transition"><input type="radio" name="correct-q-UID" class="q-correct w-4 h-4 accent-brand-600 cursor-pointer" value="2"><input type="text" class="q-opt-2 w-full bg-transparent outline-none text-sm font-medium" placeholder="Đáp án C"></div>
+                <div class="flex items-center gap-3 p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus-within:border-brand-500 transition"><input type="radio" name="correct-q-UID" class="q-correct w-4 h-4 accent-brand-600 cursor-pointer" value="3"><input type="text" class="q-opt-3 w-full bg-transparent outline-none text-sm font-medium" placeholder="Đáp án D"></div>
+            </div>
+        </div>
+    </template>
+
+    <!-- LOGIC -->
+    <script type="module">
+        import { firebaseConfig, imgbbApiKey } from './key.js';
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, collection, getDocs, updateDoc, query, where, deleteDoc, addDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let currentUser = null;
+        let currentLessonId = null;
+        let usersList = []; 
+        let state = { grade: null, book: null, subject: null };
+        let currentStep = 1;
+        let quizData = []; 
+        let quill; 
+        let draftContent = null;
+        
+        // Cấu hình mặc định (dùng khi Firestore chưa có)
+        const DEFAULT_DATA = {
+            "Lớp 12": { books: ["Kết nối tri thức", "Cánh Diều"], subjects: ["Toán", "Văn"] }
+        };
+        let systemData = DEFAULT_DATA;
+
+        // AUTH & INIT
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                try {
+                    const userDoc = await getDoc(doc(db, "users", user.uid));
+                    if (userDoc.exists() && userDoc.data().role === 'admin') {
+                        currentUser = user;
+                        document.getElementById('sidebar-email').textContent = user.email.split('@')[0];
+                        await loadSystemConfig(); // Tải cấu trúc động
+                        document.getElementById('app-loading').classList.add('hidden');
+                        initDashboard(); initQuill();
+                    } else { alert("Không có quyền Admin!"); window.location.href = 'index.html'; }
+                } catch (e) { console.error(e); window.location.href = 'auth.html'; }
+            } else { window.location.href = 'auth.html'; }
+        });
+
+        // --- SYSTEM CONFIG ---
+        async function loadSystemConfig() {
+            try { const docSnap = await getDoc(doc(db, "system", "config")); if(docSnap.exists()) systemData = docSnap.data().structure || DEFAULT_DATA; else { await setDoc(doc(db, "system", "config"), { structure: DEFAULT_DATA }); systemData = DEFAULT_DATA; } } catch(e) { console.error(e); }
+        }
+        async function saveSystemConfig() { try { await setDoc(doc(db, "system", "config"), { structure: systemData }, { merge: true }); renderCurrentView(); } catch(e) { alert(e.message); } }
+
+        window.addItem = async (type) => {
+            const name = prompt("Nhập tên mới:"); if(!name) return;
+            if(type==='grade') { if(systemData[name]) return alert("Đã tồn tại!"); systemData[name] = {books:[], subjects:[]}; }
+            else if(type==='book' && !systemData[state.grade].books.includes(name)) systemData[state.grade].books.push(name);
+            else if(type==='subject' && !systemData[state.grade].subjects.includes(name)) systemData[state.grade].subjects.push(name);
+            await saveSystemConfig();
+        }
+        window.deleteItem = async (e, type, name) => {
+            e.stopPropagation(); if(!confirm(`Xóa "${name}"?`)) return;
+            if(type==='grade') delete systemData[name];
+            else { const arr = type==='book' ? systemData[state.grade].books : systemData[state.grade].subjects; const idx = arr.indexOf(name); if(idx>-1) arr.splice(idx,1); }
+            await saveSystemConfig();
+        }
+
+        // --- QUILL ---
+        function initQuill() {
+            if(quill) return;
+            const toolbarOptions = [['bold','italic','underline','strike'],['blockquote','code-block'],[{'header':1},{'header':2}],[{'list':'ordered'},{'list':'bullet'}],[{'script':'sub'},{'script':'super'}],[{'color':[]},{'background':[]}],[{'align':[]}],['link','image','formula'],['clean']];
+            quill = new Quill('#quill-editor', { 
+                modules: { toolbar: toolbarOptions }, 
+                theme: 'snow', 
+                placeholder: 'Soạn thảo nội dung...',
+                bounds: '#editor-container-wrapper' // Tooltip nằm trong container
+            });
+            quill.getModule('toolbar').addHandler('image', selectLocalImage);
+            quill.root.addEventListener('paste', handlePaste);
+        }
+        function selectLocalImage() { const i = document.createElement('input'); i.setAttribute('type','file'); i.setAttribute('accept','image/*'); i.click(); i.onchange=()=>{if(/^image\//.test(i.files[0].type)) uploadToImgBB(i.files[0]);} }
+        function handlePaste(e) { const d = (e.clipboardData||window.clipboardData).items; for(let i=0;i<d.length;i++) if(d[i].type.indexOf("image")!==-1) { e.preventDefault(); uploadToImgBB(d[i].getAsFile()); }}
+        async function uploadToImgBB(f) {
+            document.getElementById('upload-status').textContent = 'Đang tải ảnh...';
+            const fd = new FormData(); fd.append('image', f);
+            try { const res = await fetch(`https://api.imgbb.com/1/upload?key=${imgbbApiKey}`, {method:'POST', body:fd}); const d = await res.json(); if(d.success) { const r = quill.getSelection(true)||{index:quill.getLength()}; quill.insertEmbed(r.index, 'image', d.data.url); document.getElementById('upload-status').textContent = ''; } } catch(e) { console.error(e); }
+        }
+
+        // --- RENDER ---
+        function initDashboard() { renderGrades(); }
+        window.resetDashboard = () => { state = { grade: null, book: null, subject: null }; document.getElementById('lesson-list-container').classList.add('hidden'); renderGrades(); }
+        
+        // Hàm này giúp refresh lại màn hình hiện tại (Lớp, Sách, hay Môn) sau khi Thêm/Xóa
+        function renderCurrentView() { if(state.subject) renderSubjects(); else if(state.book) renderBooks(); else renderGrades(); }
+
+        function renderGrades() {
+            updateBreadcrumb('Khối lớp');
+            let html = Object.keys(systemData).map(g => `<div onclick="selectGrade('${g}')" class="bg-white dark:bg-slate-800 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-lg hover:border-brand-500 transition cursor-pointer group relative"><button onclick="deleteItem(event,'grade','${g}')" class="absolute top-3 right-3 p-1 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition"><i data-lucide="trash-2" class="w-4 h-4"></i></button><div class="w-12 h-12 bg-brand-100 dark:bg-brand-900/30 rounded-2xl flex items-center justify-center text-brand-600 mb-4"><i data-lucide="graduation-cap"></i></div><h3 class="text-xl font-bold text-slate-800 dark:text-white">${g}</h3><p class="text-sm text-slate-500">${systemData[g].books?.length||0} bộ sách</p></div>`).join('');
+            html += `<div onclick="addItem('grade')" class="add-card rounded-3xl p-6 flex flex-col items-center justify-center cursor-pointer min-h-[180px] border-2 border-dashed border-slate-300 dark:border-slate-700 text-slate-400 hover:border-brand-500 hover:text-brand-500 transition"><div class="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-3"><i data-lucide="plus" class="w-6 h-6"></i></div><span class="font-bold text-sm">Thêm Khối</span></div>`;
+            document.getElementById('dynamic-content').innerHTML = html; lucide.createIcons();
+        }
+        window.selectGrade = (g) => { state.grade = g; renderBooks(); };
+
+        function renderBooks() {
+            updateBreadcrumb('Bộ sách');
+            let html = (systemData[state.grade].books||[]).map(b => `<div onclick="selectBook('${b}')" class="bg-white dark:bg-slate-800 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-lg hover:border-green-500 transition cursor-pointer group text-center relative"><button onclick="deleteItem(event,'book','${b}')" class="absolute top-3 right-3 p-1 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition"><i data-lucide="trash-2" class="w-4 h-4"></i></button><div class="w-14 h-14 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center text-green-600 mx-auto mb-4"><i data-lucide="book-open" class="w-7 h-7"></i></div><h3 class="text-lg font-bold text-slate-800 dark:text-white">${b}</h3></div>`).join('');
+            html += `<div onclick="addItem('book')" class="add-card rounded-3xl p-6 flex flex-col items-center justify-center cursor-pointer min-h-[180px] border-2 border-dashed border-slate-300 dark:border-slate-700 text-slate-400 hover:border-brand-500 hover:text-brand-500 transition"><div class="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-3"><i data-lucide="plus" class="w-6 h-6"></i></div><span class="font-bold text-sm">Thêm Sách</span></div>`;
+            document.getElementById('dynamic-content').innerHTML = html; lucide.createIcons();
+        }
+        window.selectBook = (b) => { state.book = b; renderSubjects(); };
+
+        function renderSubjects() {
+            updateBreadcrumb('Môn học');
+            let html = (systemData[state.grade].subjects||[]).map(s => `<div onclick="selectSubject('${s}')" class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-lg hover:border-purple-500 transition cursor-pointer group flex items-center justify-between relative"><button onclick="deleteItem(event,'subject','${s}')" class="absolute top-2 right-2 p-1 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition"><i data-lucide="trash-2" class="w-4 h-4"></i></button><div class="flex items-center gap-4"><div class="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-xl flex items-center justify-center text-purple-600"><i data-lucide="layers"></i></div><h3 class="text-lg font-bold text-slate-800 dark:text-white">${s}</h3></div><i data-lucide="chevron-right" class="text-slate-300"></i></div>`).join('');
+            html += `<div onclick="addItem('subject')" class="add-card rounded-2xl p-5 flex items-center justify-center cursor-pointer border-2 border-dashed border-slate-300 dark:border-slate-700 text-slate-400 hover:border-brand-500 hover:text-brand-500 transition"><i data-lucide="plus" class="w-5 h-5 mr-2"></i><span class="font-bold text-sm">Thêm Môn</span></div>`;
+            document.getElementById('dynamic-content').innerHTML = html; lucide.createIcons();
+        }
+        window.selectSubject = (s) => { state.subject = s; updateBreadcrumb('Bài học'); document.getElementById('dynamic-content').innerHTML = ''; document.getElementById('lesson-list-container').classList.remove('hidden'); loadLessons(); };
+
+        async function loadLessons() {
+            const c = document.getElementById('lesson-list-items'); c.innerHTML = '<p class="text-center text-slate-400">Đang tải...</p>';
+            const q = query(collection(db, "lessons"), where("filterKey", "==", `${state.grade}_${state.book}_${state.subject}`));
+            try {
+                const snap = await getDocs(q);
+                if(snap.empty) { c.innerHTML = '<div class="text-center p-8 text-slate-500">Chưa có bài học nào.</div>'; return; }
+                c.innerHTML = snap.docs.map(doc => { const d=doc.data(); const st=d.status==='draft'?'<span class="bg-yellow-100 text-yellow-700 text-[10px] px-2 py-0.5 rounded ml-2 font-bold uppercase">Nháp</span>':''; return `<div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-100 dark:border-slate-800 flex justify-between items-center group hover:shadow-md transition"><div class="flex items-center gap-4"><div class="p-3 bg-brand-50 dark:bg-brand-900/20 text-brand-600 rounded-xl"><i data-lucide="file-text"></i></div><div><p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">${d.chapter}</p><h3 class="font-bold text-lg text-slate-900 dark:text-white flex items-center">${d.title} ${st}</h3></div></div><div class="flex gap-2 opacity-0 group-hover:opacity-100 transition"><button onclick="editLesson('${doc.id}')" class="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100"><i data-lucide="edit-2" class="w-4 h-4"></i></button><button onclick="deleteLesson('${doc.id}')" class="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100"><i data-lucide="trash-2" class="w-4 h-4"></i></button></div></div>`; }).join('');
+                lucide.createIcons();
+            } catch(e) { c.innerHTML = '<p class="text-red-500">Lỗi tải.</p>'; }
+        }
+
+        // --- WIZARD EDITOR ---
+        window.openEditor = (mode) => {
+            document.getElementById('editor-panel').classList.remove('hidden'); currentStep = 1; updateStepUI();
+            if (mode === 'new') { currentLessonId = null; document.getElementById('editor-title-text').textContent = "Soạn bài mới"; document.getElementById('input-chapter').value = ''; document.getElementById('input-title').value = ''; draftContent = ''; if(quill) quill.setText(''); document.getElementById('quiz-container').innerHTML = ''; quizData = []; checkQuizEmpty(); }
+            document.getElementById('editor-subtitle').textContent = `${state.grade} > ${state.book} > ${state.subject}`;
+        }
+        window.editLesson = async (id) => {
+            currentLessonId = id; openEditor('edit'); document.getElementById('editor-title-text').textContent = "Đang tải...";
+            const d = (await getDoc(doc(db, "lessons", id))).data();
+            document.getElementById('editor-title-text').textContent = "Sửa: " + d.title; document.getElementById('input-chapter').value = d.chapter; document.getElementById('input-title').value = d.title;
+            draftContent = d.content || ''; quizData = d.quiz || []; renderQuizFromData();
+        }
+        window.updateStepUI = () => {
+            [1,2,3].forEach(i => { document.getElementById(`step-content-${i}`).classList.add('hidden'); const d = document.querySelector(`#step-indicator-${i} .step-dot`); d.innerHTML=i; d.parentElement.classList.remove('text-brand-600','dark:text-brand-400'); d.classList.remove('bg-brand-600','border-brand-600','text-white'); d.classList.add('border-slate-300','text-slate-400'); });
+            document.getElementById(`step-content-${currentStep}`).classList.remove('hidden');
+            if(currentStep === 2 && quill) { if(draftContent !== null) { quill.root.innerHTML = draftContent; draftContent = null; } }
+            for(let i=1; i<=3; i++) { const d = document.querySelector(`#step-indicator-${i} .step-dot`); if(i<currentStep) { d.innerHTML='<i data-lucide="check" class="w-4 h-4"></i>'; d.classList.add('bg-green-500','border-green-500','text-white'); } else if(i===currentStep) { d.classList.add('bg-brand-600','border-brand-600','text-white'); d.parentElement.classList.add('text-brand-600','dark:text-brand-400'); } }
+            const n = document.getElementById('btn-next'); if(currentStep===3) n.style.display='none'; else { n.style.display='block'; n.textContent='Tiếp tục'; }
+            document.getElementById('btn-prev').disabled = currentStep===1; document.getElementById('btn-prev').style.opacity = currentStep===1?'0.5':'1';
+            lucide.createIcons();
+        }
+        window.nextStep = () => { if(currentStep<3) { currentStep++; updateStepUI(); } }
+        window.prevStep = () => { if(currentStep>1) { currentStep--; updateStepUI(); } }
+
+        // Quiz Logic
+        window.addQuizQuestion = () => { const uid=Date.now(); const t=document.getElementById('quiz-template').content.cloneNode(true); t.querySelectorAll('input[type="radio"]').forEach(r=>r.name=`correct-${uid}`); document.getElementById('quiz-container').appendChild(t); updateQuizIndices(); checkQuizEmpty(); lucide.createIcons(); }
+        window.removeQuiz = (btn) => { btn.closest('.quiz-item').remove(); updateQuizIndices(); checkQuizEmpty(); }
+        function updateQuizIndices() { document.querySelectorAll('.quiz-item').forEach((it,i)=>it.querySelector('.q-idx').textContent=i+1); }
+        function checkQuizEmpty() { document.getElementById('empty-quiz').style.display = document.getElementById('quiz-container').children.length===0?'block':'none'; }
+        function renderQuizFromData() { const c=document.getElementById('quiz-container'); c.innerHTML=''; quizData.forEach(q=>{ const uid=Math.random().toString(36).substr(2); const t=document.getElementById('quiz-template').content.cloneNode(true); t.querySelector('.q-title').value=q.question; q.options.forEach((o,i)=>t.querySelector(`.q-opt-${i}`).value=o); const rs=t.querySelectorAll('input[type="radio"]'); rs.forEach(r=>r.name=`correct-${uid}`); if(q.correct!==undefined) rs[q.correct].checked=true; c.appendChild(t); }); updateQuizIndices(); checkQuizEmpty(); lucide.createIcons(); }
+        function getQuizData() { const q=[]; document.querySelectorAll('.quiz-item').forEach(it=>{ const t=it.querySelector('.q-title').value; const o=[0,1,2,3].map(i=>it.querySelector(`.q-opt-${i}`).value); let c=-1; it.querySelectorAll('input[type="radio"]').forEach((r,i)=>{if(r.checked)c=i}); if(t) q.push({question:t,options:o,correct:c}); }); return q; }
+
+        window.saveLesson = async (status) => {
+            const chapter = document.getElementById('input-chapter').value, title = document.getElementById('input-title').value, content = quill?quill.root.innerHTML:(draftContent||''), quiz = getQuizData();
+            if(status==='published' && (!title || (!content && !quill))) return alert("Nhập thiếu thông tin!");
+            const d = { chapter, title, content, quiz, status, filterKey: `${state.grade}_${state.book}_${state.subject}`, grade:state.grade, book:state.book, subject:state.subject, updatedAt:new Date().toISOString(), updatedBy:currentUser.email };
+            try { if(currentLessonId) await updateDoc(doc(db,"lessons",currentLessonId),d); else await addDoc(collection(db,"lessons"),d); alert("Lưu thành công!"); closeEditor(); loadLessons(); } catch(e){alert(e.message);}
+        }
+        window.deleteLesson = async (id) => { if(confirm("Xóa bài này?")) { await deleteDoc(doc(db,"lessons",id)); loadLessons(); } }
+        window.closeEditor = () => document.getElementById('editor-panel').classList.add('hidden');
+
+        // TABS & OTHER
+        window.goBack = () => {
+            if(state.subject) { state.subject = null; document.getElementById('lesson-list-container').classList.add('hidden'); document.getElementById('dynamic-content').classList.remove('hidden'); renderSubjects(); }
+            else if(state.book) { state.book = null; renderBooks(); }
+            else if(state.grade) { state.grade = null; renderGrades(); }
+            // Update button visibility via render functions call to updateBreadcrumb
+        }
+
+        window.switchTab = (t) => {
+            ['lessons','users','stats'].forEach(id=>{ document.getElementById(`tab-${id}`).classList.add('hidden'); document.getElementById(`nav-${id}`).className="w-full flex items-center px-4 py-3.5 rounded-2xl transition-all duration-200 group text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"; });
+            document.getElementById(`tab-${t}`).classList.remove('hidden');
+            document.getElementById(`nav-${t}`).className="w-full flex items-center px-4 py-3.5 rounded-2xl transition-all duration-200 group bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-400";
+            
+            // Update Header & Button Logic
+            const bc = document.getElementById('breadcrumb-container');
+            const backBtn = document.getElementById('header-back-btn');
+            
+            if(t==='users') { 
+                bc.innerHTML = '<span class="text-lg font-bold text-slate-800 dark:text-white">Quản lý thành viên</span>'; 
+                backBtn.classList.add('hidden');
+                loadUsers(); 
+            }
+            else if(t==='stats') { 
+                bc.innerHTML = '<span class="text-lg font-bold text-slate-800 dark:text-white">Thống kê tổng quan</span>'; 
+                backBtn.classList.add('hidden');
+                loadStats(); 
+            }
+            else { 
+                // Lesson tab: Re-check state for breadcrumb
+                if(state.grade) updateBreadcrumb(); 
+                else { backBtn.classList.add('hidden'); bc.innerHTML='<span class="font-bold text-slate-800 dark:text-white">Tổng quan</span>'; }
+            }
+        }
+
+        async function loadUsers() { document.getElementById('users-loading').style.display='block'; document.getElementById('users-table-body').innerHTML=''; const s = await getDocs(collection(db,"users")); let l=[]; s.forEach(d=>l.push({id:d.id,...d.data()})); renderUsers(l); document.getElementById('users-loading').style.display='none'; }
+        window.renderUsers = (l) => { document.getElementById('users-table-body').innerHTML = l.map(u => `<tr class="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition"><td class="px-8 py-5"><div class="flex items-center"><div class="w-8 h-8 rounded-full bg-gradient-to-br from-slate-400 to-slate-500 text-white flex items-center justify-center text-xs font-bold mr-3">${u.email[0].toUpperCase()}</div><span class="font-medium text-slate-900 dark:text-white">${u.email}</span></div></td><td class="px-8 py-5"><span class="px-2.5 py-1 rounded-full text-xs font-bold ${u.role==='admin'?'bg-purple-100 text-purple-700':'bg-slate-100 text-slate-600'}">${u.role==='admin'?'Admin':'Học sinh'}</span></td><td class="px-8 py-5 text-right">${u.id!==currentUser.uid?`<button onclick="toggleRole('${u.id}','${u.role}')" class="text-xs font-bold text-brand-600 hover:text-brand-700 bg-brand-50 px-3 py-1.5 rounded-lg hover:bg-brand-100 transition">Đổi quyền</button>`:'<span class="text-xs text-slate-400 italic">Bạn</span>'}</td></tr>`).join(''); }
+        window.toggleRole = async (uid,role) => { if(confirm("Đổi quyền?")) { await updateDoc(doc(db,"users",uid),{role:role==='admin'?'student':'admin'}); loadUsers(); } }
+        async function loadStats() { const u=await getDocs(collection(db,"users")); const l=await getDocs(collection(db,"lessons")); document.getElementById('stat-users').textContent=u.size; document.getElementById('stat-lessons').textContent=l.size; }
+
+        function updateBreadcrumb() { 
+            const c = document.getElementById('breadcrumb-container'); 
+            const btn = document.getElementById('header-back-btn');
+            const items = []; 
+            if (state.grade) items.push(state.grade); 
+            if (state.book) items.push(state.book); 
+            if (state.subject) items.push(state.subject);
+            
+            // Show back button if not at root
+            if (items.length > 0) {
+                btn.classList.remove('hidden');
+                c.innerHTML = items.map((it, i) => `<span class="${i===items.length-1 ? 'font-bold text-brand-600' : 'text-slate-500'}">${it}</span>`).join('<span class="mx-2 text-slate-300">/</span>'); 
+            } else {
+                btn.classList.add('hidden');
+                c.innerHTML = '<span class="font-bold text-slate-800 dark:text-white">Tổng quan</span>'; 
+            }
+            lucide.createIcons(); 
+        }
+        
+        window.handleLogout = () => signOut(auth).then(() => { localStorage.removeItem('chill_user'); window.location.href = 'auth.html'; });
+        window.toggleTheme = () => { document.documentElement.classList.toggle('dark'); localStorage.setItem('chill_theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light'); }
+        lucide.createIcons();
+    </script>
+</body>
+</html>
